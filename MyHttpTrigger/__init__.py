@@ -1,14 +1,15 @@
 import azure.functions as func
-from flask import Flask, Response
+from fastapi import FastAPI, Response
+from azure.functions import AsgiMiddleware
 
-# Initialize the Flask app
-flask_app = Flask(__name__)
+# Initialize the FastAPI app
+fast_app = FastAPI()
 
-# Define a simple route
-@flask_app.route('/MyHttpTrigger', methods=['GET'])
-def return_http():
-    return Response("<h1>Hello World™</h1>", mimetype="text/html")
+@fast_app.get("/MyHttpTrigger")
+async def my_http_trigger():
+    return Response(content="Hello from FastAPI at MyHttpTrigger", media_type="text/plain")
 
-# The entry point for Azure Functions
-def main(req: func.HttpRequest) -> func.HttpResponse:
-    return func.WsgiMiddleware(flask_app.wsgi_app).handle(req)
+# Define the main function as the entry point for Azure Functions
+async def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+    # Use AsgiMiddleware to handle the FastAPI app asynchronously
+    return await AsgiMiddleware(fast_app).handle_async(req, context)
