@@ -1,22 +1,14 @@
 import azure.functions as func
-import logging
+from flask import Flask, Response
 
+# Initialize the Flask app
+flask_app = Flask(__name__)
+
+# Define a simple route
+@flask_app.route('/MyHttpTrigger', methods=['GET'])
+def return_http():
+    return Response("<h1>Hello World™</h1>", mimetype="text/html")
+
+# The entry point for Azure Functions
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
-
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
-        )
+    return func.WsgiMiddleware(flask_app.wsgi_app).handle(req)
